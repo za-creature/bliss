@@ -1,0 +1,32 @@
+{
+  "name": "bliss",
+  "version": "1.0.0",
+  "description": "Serverless web application framework for Cloudflare Workers",
+  "module": "index.mjs",
+  "modules.root": ".",
+  "scripts": {
+    "test": "mocha",
+    "lint": "eslint --ext js,mjs .",
+    "cover": "nyc --reporter=html --extension=.mjs mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/za-creature/bliss.git"
+  },
+  "author": "Radu Dan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/za-creature/bliss/issues"
+  },
+  "homepage": "https://github.com/za-creature/bliss",
+  "devDependencies": {
+    "cf-emu": "git+ssh://git@github.com/za-creature/cf-emu.git",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^5.9.0",
+    "esm": "^3.2.4",
+    "mocha": "^5.2.0",
+    "nyc": "^13.1.0",
+    "source-map-support": "^0.5.10"
+  }
+}
