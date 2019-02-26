@@ -20,13 +20,14 @@
   },
   "homepage": "https://github.com/za-creature/bliss",
   "devDependencies": {
+    "babel-eslint": "^10.0.1",
     "cf-emu": "git+ssh://git@github.com/za-creature/cf-emu.git",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^5.9.0",
-    "esm": "^3.2.4",
-    "mocha": "^5.2.0",
-    "nyc": "^13.1.0",
+    "eslint": "^5.14.1",
+    "esm": "^3.2.5",
+    "mocha": "^6.0.1",
+    "nyc": "^13.3.0",
     "source-map-support": "^0.5.10"
   }
 }

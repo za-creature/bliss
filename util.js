@@ -25,7 +25,7 @@ export function sha256(data) {
 
 
 export function utf8(data) {
-    return(typeof data === 'string' ? TEXT.encode(data) : new Uint8Array(data))
+    return(typeof data == 'string' ? TEXT.encode(data) : new Uint8Array(data))
 }
 
 
@@ -38,6 +38,8 @@ export function random(count) {
 
 
 export let uuid = () => hex(random(16))
+export let empty = obj => Object.keys(obj).length == 0
+export let raise = (message, type=Error) => {throw new type(message)}
 
 
 // structures
@@ -89,3 +91,28 @@ export function lru(capacity, getter) {
         return result
     }
 }
+
+
+/*
+// allows the use of async functions in sync templates
+import router from '../'
+let calls = null
+export function async_filter(fn) {
+    if(calls == null) {
+        calls = []
+        router.filters.push(async (response) => {
+            let body = await (await response).text()
+            for(let [search, replace] of calls)
+                body = body.replace(search, await replace)
+            calls = []
+            return new Response(body, response)
+        })
+    }
+
+    return function() {
+        let marker = uuid()
+        calls.add([marker, fn(...arguments)])
+        return marker
+    }
+}
+*/
