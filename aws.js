@@ -36,12 +36,12 @@ export function aws_sign(date, service, message) {
 //                             service, method, [url], [body, [headers]]
 export async function aws_rest(service, method, url='/', body, headers) {
     // param juggling
-    if(typeof url !== 'string') {
-        url = '/'
+    if(typeof url != 'string') {
         headers = body
         body = url
+        url = '/'
     }
-    if(typeof body !== 'string')
+    if(typeof body != 'string')
         body = JSON.stringify(body)
     if(!headers)
         headers = {}

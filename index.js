@@ -24,7 +24,7 @@ export default async function router(ev) {
         ev.respondWith(await node.apply(url, args))
     } catch(err) {
         ev.respondWith(response('internal error', 500))
-        console.error(err)
+        console.error(err) // eslint-disable-line
     }
 }
 
@@ -45,7 +45,7 @@ export function route(method, path, fn) {
 
 // helpers
 export function response(body, status=200, headers={}) {
-    if(typeof status === 'object') {
+    if(typeof status == 'object') {
         headers = status
         status = 200
     }

@@ -1,16 +1,16 @@
 env:
     browser: true
     es6: true
-    node: true
-    mocha: true
 extends: 'eslint:recommended'
+parser: babel-eslint
 parserOptions:
     sourceType: module
     ecmaVersion: 8
 rules:
     indent:
+      - off
+    no-cond-assign:
         - off
-        - 4
     linebreak-style:
         - error
         - unix
@@ -20,7 +20,3 @@ rules:
     semi:
         - error
         - never
-    no-console:
-        - off
-    no-cond-assign:
-        - off
