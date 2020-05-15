@@ -14,7 +14,7 @@ export async function client_upload(fields, timeout=3600*1000) {
     for(let name in fields)
         conditions.push({[name]: fields[name]})
     fields.policy = btoa(JSON.stringify({
-        expiration: new Date(Date.now() + timeout).toISOString(),
+        'expiration': new Date(Date.now() + timeout).toISOString(),
         conditions
     }))
 

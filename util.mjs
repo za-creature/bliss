@@ -2,42 +2,73 @@
 export let enc = encodeURIComponent
 
 
-export function hex(buffer) {
-    return Array.prototype.map.call(
-        new Uint8Array(buffer),
-        x => `00${x.toString(16)}`.slice(-2)
-    ).join('')
+let encoder = new TextEncoder()
+let decoder = new TextDecoder()
+export let utf8_encode = encoder.encode.bind(encoder)
+export let utf8_decode = decoder.decode.bind(decoder)
+
+
+let binary_passthrough = bin =>
+    typeof bin == 'string' ? utf8_encode(bin)
+    : bin.buffer instanceof ArrayBuffer
+    ? new Uint8Array(bin.buffer, bin.byteOffset, bin.byteLength)
+    : new Uint8Array(bin)
+
+
+export function base64_encode(bin) {
+    let data = binary_passthrough(bin)
+    let len = data.length
+    let result = [], i = 0, j
+    do {
+        j = Math.min(len, i + 16383)
+        result.push(btoa(String.fromCharCode(...data.slice(i, j))))
+        i = j
+    } while(i < len)
+    return result.join('')
+}
+export function base64_decode(str) {
+    let data = atob(str)
+    let len = data.length
+    let result = new Uint8Array(len)
+    for(let i=0; i<len; i++)
+        result[i] = data.charCodeAt(i)
+    return result
 }
 
 
-const TEXT = new TextEncoder('utf-8')
+export function hex(bin) {
+    return [].map.call(binary_passthrough(bin),
+                       x => `00${x.toString(16)}`.slice(-2)).join('')
+}
+export function bin(hex) {
+    let result = new Uint8Array(hex.length / 2)
+    for(let i=0; i<result.length; i++)
+        result[i] = parseInt(hex.substring(i<<1, 2), 16)
+    return result    
+}
+
+
 export function hmac(key, data) {
-    return crypto.subtle.importKey('raw', utf8(key),
-                                   {name: 'HMAC', hash: {name: 'SHA-256'}},
+    return crypto.subtle.importKey('raw', binary_passthrough(key),
+                                   {'name': 'HMAC', 'hash': {'name': 'SHA-256'}},
                                    false, ['sign'])
-    .then(key => crypto.subtle.sign('HMAC', key, utf8(data)))
+    .then(key => crypto.subtle.sign('HMAC', key, binary_passthrough(data)))
 }
 
 
 export function sha256(data) {
-    return crypto.subtle.digest('SHA-256', utf8(data))
-}
-
-
-export function utf8(data) {
-    return(typeof data == 'string' ? TEXT.encode(data) : new Uint8Array(data))
+    return crypto.subtle.digest('SHA-256', binary_passthrough(data))
 }
 
 
 // general purpoe
 export function random(count) {
-    let buff = new Uint8Array(count)
-    crypto.getRandomValues(buff)
-    return buff
+    return crypto.getRandomValues(new Uint8Array(count))
 }
 
 
 export let uuid = () => hex(random(16))
+export let defined = v => typeof v != 'undefined'
 export let empty = obj => Object.keys(obj).length == 0
 export let raise = (message, type=Error) => {throw new type(message)}
 
@@ -95,7 +126,7 @@ export function lru(capacity, getter) {
 
 /*
 // allows the use of async functions in sync templates
-import router from '../'
+import router from '..'
 let calls = null
 export function async_filter(fn) {
     if(calls == null) {

@@ -1,22 +1,26 @@
+extends: 'eslint:recommended'
 env:
+    worker: true
     browser: true
     es6: true
-extends: 'eslint:recommended'
 parser: babel-eslint
 parserOptions:
     sourceType: module
     ecmaVersion: 8
 rules:
     indent:
-      - off
-    no-cond-assign:
-        - off
+    - off
     linebreak-style:
-        - error
-        - unix
+    - error
+    - unix
     quotes:
-        - error
-        - single
+    - error
+    - single
     semi:
-        - error
-        - never
+    - error
+    - never
+    no-cond-assign:
+    - off
+    quote-props:
+    - error
+    - always

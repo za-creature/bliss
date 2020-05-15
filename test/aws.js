@@ -30,20 +30,20 @@ describe('aws', () => {
 
 
     it('implements the v4 request spec', async () => {
-        let old_fetch = global.fetch
-        let old_date = global.Date
+        let old_fetch = self.fetch
+        let old_date = self.Date
         try {
             let url, init
-            global.fetch = (_url, _init) => {
+            self.fetch = (_url, _init) => {
                 url = _url
                 init = _init
                 return 'mock'
             }
-            global.Date = function() {
+            self.Date = function() {
                 return new old_date(2019, 2, 10, 19, 46, 12)
             }
             assert(await aws_rest('s3', 'GET') == 'mock')
-            assert(url.href == 'https://s3.us-east-1.amazonaws.com/')
+            assert(new URL(url).href == 'https://s3.us-east-1.amazonaws.com/')
             assert(init.method == 'GET')
             assert(init.headers.host == 's3.us-east-1.amazonaws.com')
             assert(init.headers['x-amz-content-sha256'] == 'e3b0c44298fc1c14' +
@@ -51,11 +51,11 @@ describe('aws', () => {
             assert(init.headers.authorization == 'AWS4-HMAC-SHA256 Credentia' +
                 'l=AKIAIOSFODNN7EXAMPLE/20190310/us-east-1/s3/aws4_request, ' +
                 'SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-' +
-                'date, Signature=b8071ba571af4f32525b12e6ec0f4a427b3a4ce0078' +
-                'b9e5a2efd98d0838318b9')
+                'date, Signature=7d850b2e6005cf3f15b454d7245b8443c6bfa915ea5' +
+                'aac792c33195466433481')
         } finally {
-            global.fetch = old_fetch
-            global.date = old_date
+            self.fetch = old_fetch
+            self.Date = old_date
         }
     })
 })

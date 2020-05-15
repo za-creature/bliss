@@ -2,9 +2,9 @@ import {enc, hex, hmac, sha256} from './util'
 
 
 let config = {
-    key: '',
-    secret: '',
-    region: ''
+    key: '', // eslint-disable-line quote-props
+    secret: '', // eslint-disable-line quote-props
+    region: '' // eslint-disable-line quote-props
 }
 export default config
 
@@ -34,21 +34,21 @@ export function aws_sign(date, service, message) {
 
 
 //                             service, method, [url], [body, [headers]]
-export async function aws_rest(service, method, url='/', body, headers) {
+export async function aws_rest(service, method, url='/', body=null, headers={}) {
     // param juggling
     if(typeof url != 'string') {
         headers = body
         body = url
         url = '/'
     }
-    if(typeof body != 'string')
+    if(body && typeof body != 'string')
         body = JSON.stringify(body)
     if(!headers)
         headers = {}
 
     // new request
     let {algo, credential, date, datetime, qual} = aws_request(service)
-    let host = `${service}.${config.region}.amazonaws.com`
+    let host = `${service.replace('ses', 'email')}.${config.region}.amazonaws.com`
     url = new URL(url, `https://${host}`)
     let body_hash = hex(await sha256(body || ''))
 
@@ -87,5 +87,5 @@ export async function aws_rest(service, method, url='/', body, headers) {
     headers['authorization'] = `${algo} Credential=${credential}, ` +
                                `SignedHeaders=${signed_headers}, ` +
                                `Signature=${signature}`
-    return fetch(url, {method, headers, body})
+    return fetch(url.toString(), {method, headers, body})
 }

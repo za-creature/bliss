@@ -1,5 +1,6 @@
 import {assert} from 'chai'
-import {enc, hex, hmac, sha256, utf8, random, uuid, list, lru} from '../util'
+import {enc, hex, hmac, sha256, utf8_encode, random, uuid, list, lru} from '../util'
+import {base128_encode,  base128_decode} from '../util/base128'
 
 
 describe('utils', () => {
@@ -33,7 +34,7 @@ describe('utils', () => {
 
 
     describe('utf8', () => it('encodes according to spec', () => assert(
-        hex(utf8('țșțș')) == 'c89bc899c89bc899'
+        hex(utf8_encode('țșțș')) == 'c89bc899c89bc899'
     )))
 
 
@@ -160,9 +161,15 @@ describe('utils', () => {
                 throw new Error('oops')
             }).bind(null, 'x'), 'oops')
 
-            await assert.isRejected(lru(1, () => new Promise((res, rej) => {
-                setTimeout(rej.bind(null, new Error('async-oops')))
-            }))('x'), 'async-oops')
+            let err
+            try {
+                await lru(1, () => new Promise((res, rej) => {
+                    setTimeout(rej.bind(null, new Error('async-oops')))
+                }))('x')
+            } catch(e) {
+                err = e
+            }
+            assert(err.message == 'async-oops')
         })
 
         it('bundles async calls', async () => {
@@ -182,7 +189,13 @@ describe('utils', () => {
 
             let a = cache(1, 2)
             reject(new Error('y'))
-            await assert.isRejected(a, 'y')
+            let err
+            try {
+                await a
+            } catch(e) {
+                err = e
+            }
+            assert(err.message == 'y')
 
             let b = cache(1, 2)
             assert(a != b)
@@ -191,6 +204,42 @@ describe('utils', () => {
             resolve('z')
             assert(await b == 'z')
             assert(await c == 'z')
+        })
+    })
+
+    describe('base128', () => {
+        it('is binary safe for all paddings', () => {
+            let input = []
+            for(let i=0; i<13; i++) input.push(256*Math.random()|0)
+            for(let i=0; i<6; i++) {
+                input.push(256*Math.random()|0)
+                let transcode = base128_encode(input)
+                for(let char of transcode)
+                    assert(char < 128)
+
+                let output = base128_decode(String.fromCharCode(...transcode))
+                assert(input.length == output.length)
+                for(let i=0; i<input.length; i++)
+                    assert(input[i] == output[i])
+            }
+        })
+
+        it('decoder has sufficient throughput', () => {
+            // this test is very tricky to measure as a lot of latency is lost
+            // during allocation and instrumentation plays a significant factor
+            // as well; aiming for 90KiB/ms in order to fully saturate the 1MiB
+            // max script size within the alloted per request time of 10ms
+            let input = new Uint8Array(4 * 1024 * 1024).map(() => 256*Math.random()|0)
+
+            let transcode = base128_encode(input)
+            let chunks = [], i = 0
+            while(i < transcode.length)
+                chunks.push(String.fromCharCode(...transcode.slice(i, i += 16384)))
+            transcode = chunks.join('')
+
+            let start = Date.now()
+            base128_decode(transcode)
+            assert(Date.now() - start < 40)
         })
     })
 })
