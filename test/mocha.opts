@@ -1,4 +1,0 @@
---require source-map-support/register
---require esm
---require cf-emu
---require test/conftest

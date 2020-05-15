@@ -2,7 +2,7 @@ import {aws_rest} from '../aws'
 import {enc} from '../util'
 
 
-export default (name, version, context) => {
+export default (name, version, context=null) => {
     let path = `/2015-03-31/functions/${enc(name)}/invocations`
     if(version)
         path += `?Qualifier=${enc(version)}`
@@ -27,7 +27,7 @@ export default (name, version, context) => {
         if(!res.ok)
             raise(res.statusText, res)
         if(res.headers.has('x-amz-function-error'))
-            raise('call faled', res)
+            raise('call failed', res)
         return res.json()
     }
 

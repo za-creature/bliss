@@ -1,5 +1,5 @@
 import {aws_rest} from '../aws'
-import {empty, raise} from '../util'
+import {base64_encode, base64_decode, empty, raise} from '../util'
 
 
 // low level interface
@@ -19,17 +19,15 @@ export default async function request(method, body, headers={}) {
 
 
 // js to dynamo (de)serialization
-let b64 = (...a) => btoa(String.fromCharCode(...new Uint8Array(...a)))
 function serialize_set(s) {
     let values = Array.from(s.values())
     let first = values[0]
     return (
-        typeof first == 'number' ? {NS: values.map(String)}
-        : typeof first == 'string' ? {SS: values.map(String)}
-        : typeof first == 'object' ? {BS:
-            first instanceof ArrayBuffer ? values.map(b64)
-            : first.buffer instanceof ArrayBuffer
-            ? values.map(x => b64(x.buffer, x.byteOffset, x.byteLength))
+        typeof first == 'number' ? {'NS': values.map(String)}
+        : typeof first == 'string' ? {'SS': values.map(String)}
+        : typeof first == 'object' ? {'BS':
+            first instanceof ArrayBuffer || first.buffer instanceof ArrayBuffer
+            ? values.map(base64_encode)
             : raise(`unsupported binary set type ${typeof first}`, TypeError)
         }
         : raise(`unsupported set type ${typeof first}`, TypeError)
@@ -37,42 +35,40 @@ function serialize_set(s) {
 }
 export function serialize_val(val) {
     return (
-        typeof val == 'string' ? {S: val}
-        : typeof val == 'number' ? {N: String(val)}
-        : typeof val =='boolean' ? {BOOL: val}
+        typeof val == 'string' ? {'S': val}
+        : typeof val == 'number' ? {'N': String(val)}
+        : typeof val =='boolean' ? {'BOOL': val}
         : typeof val == 'object' ?
-            val == null ? {NULL: true}
+            val == null ? {'NULL': true}
             : val instanceof Set ? serialize_set(val)
-            : val instanceof Map ? {M: serialize(val)}
-            : val instanceof ArrayBuffer ? {B: b64(val)}
-            : val.buffer instanceof ArrayBuffer
-            ? {B: b64(val.buffer, val.byteOffset, val.byteLength)}
-            : Array.isArray(val) ? {L: val.map(serialize_val)}
-            : {M: serialize(val)}
+            : val instanceof Map ? {'M': serialize(val)}
+            : val instanceof ArrayBuffer || val.buffer instanceof ArrayBuffer
+            ? {'B': base64_encode(val)}
+            : Array.isArray(val) ? {'L': val.map(serialize_val)}
+            : {'M': serialize(val)}
         : raise(`unsupported type ${typeof val}`, TypeError)
     )
 }
 export function serialize(map) {
     let result = {}
-    for(let [key, value] of (map.entries || Object.entries)(map))
+    for(let [key, value] of map.entries ? map.entries() : Object.entries(map))
         result[key] = serialize_val(value)
     return result
 }
 
-let b64d = s => new Uint8Array(atob(s).split('').map(s => s.charCodeAt(0)))
 let defined = x => typeof x != 'undefined'
 export function unserialize_val(val) {
     return (
-        defined(val.S) ? val.S
-        : defined(val.B) ? b64d(val.B)
-        : defined(val.N) ? Number(val.N)
-        : defined(val.BOOL) ? val.BOOL
-        : defined(val.NULL) ? null
-        : defined(val.M) ? unserialize(val.M)
-        : defined(val.L) ? unserialize(val.L)
-        : defined(val.NS) ? new Set(val.NS.map(Number))
-        : defined(val.SS) ? new Set(val.SS)
-        : defined(val.BS) ? new Set(val.BS.map(b64d))
+        defined(val['S']) ? val['S']
+        : defined(val['B']) ? base64_decode(val['B'])
+        : defined(val['N']) ? Number(val['N'])
+        : defined(val['BOOL']) ? val['BOOL']
+        : defined(val['NULL']) ? null
+        : defined(val['M']) ? unserialize(val['M'])
+        : defined(val['L']) ? unserialize(val['L'])
+        : defined(val['NS']) ? new Set(val['NS'].map(Number))
+        : defined(val['SS']) ? new Set(val['SS'])
+        : defined(val['BS']) ? new Set(val['BS'].map(base64_decode))
         : raise(`unsupported value ${val}`, RangeError)
     )
 }
@@ -106,7 +102,7 @@ class Const extends Term {
 }
 let const_val = (val) => val instanceof Term ? val : new Const(val)
 
-class BooleanExpression extends Term {
+class Condition extends Term {
     and(other) {
         return bool('(', this, ')and(', other, ')')
     }
@@ -117,7 +113,7 @@ class BooleanExpression extends Term {
         return bool('not(', this, ')')
     }
 }
-let bool = (...args) => new BooleanExpression(combine(args))
+let bool = (...args) => new Condition(combine(args))
 
 class SortableExpression extends Term {
     between(low, high) {
@@ -129,9 +125,11 @@ class SortableExpression extends Term {
         return bool(this, ' in(', new Term(combine(values.map(const_val), ',')), ')')
     }
 }
-for(let [key, sep] of Object.entries({
-    eq: '=', ne: '<>', lt: '<', lte: '<=', gt: '>', gte: '>='
-}))
+for(let [key, sep] of [
+    ['eq', '='], ['ne', '<>'],
+    ['lt', '<'], ['lte', '<='],
+    ['gt', '>'], ['gte', '>=']
+])
     SortableExpression.prototype[key] = function(other) {
         return bool(this, sep, const_val(other))
     }
@@ -166,7 +164,7 @@ class Attribute extends Defaultable {
         super(([key=identity,]=[]) => key(name))
     }
     exists() { return bool('attribute_exists(', this, ')') }
-    is(type) { return typeof type === 'undefined'
+    is(type) { return typeof type == 'undefined'
         ? bool('attribute_not_exists(', this, ')')
         : bool('attribute_type(', this, ',', const_val(
             type == String ? 'S'
@@ -199,7 +197,7 @@ class Attribute extends Defaultable {
         return this.size()
     }
     set(val) {
-        if(typeof val === 'undefined')
+        if(typeof val == 'undefined')
             return mutate('UNSET', this)
         return mutate('SET', this, '=', const_val(val))
     }
@@ -277,17 +275,17 @@ let already_sent = raise.bind(null, 'query already sent', SyntaxError)
 
 
 function Query(method, table, query, extra={}, parse_response=identity) {
-    query.TableName = table
-    query.ReturnConsumedCapacity = 'TOTAL'
+    query['TableName'] = table
+    query['ReturnConsumedCapacity'] = 'TOTAL'
     let keys = {}
     let values = {}
     let enc = entity_encoder(keys, values)
 
     let self = Promise.resolve().then(() => {
         if(!empty(keys))
-            query.ExpressionAttributeNames = keys
+            query['ExpressionAttributeNames'] = keys
         if(!empty(values))
-            query.ExpressionAttributeValues = values
+            query['ExpressionAttributeValues'] = values
         let temp = request(method, query)
         // disable custom methods
         for(let key in extra)
@@ -302,43 +300,49 @@ function Query(method, table, query, extra={}, parse_response=identity) {
 
 function search_query(method, table, consistent, cond) {
     let enc
-    let query = {ConsistentRead: consistent}
-    let req = Query(method, table, query, {_: (q, e) => enc = e})
-    req._()
-    delete req._
+    let query = {'ConsistentRead': consistent}
+    let req = Query(method, table, query, {'_': (q, e) => enc = e})
+    req['_']()
+    delete req['_']
     if(cond) {
-        cond instanceof BooleanExpression || raise('invalid query', TypeError)
-        query.KeyConditionExpression = cond.toString(enc)
+        cond instanceof Condition || raise('invalid query', TypeError)
+        query['KeyConditionExpression'] = cond.toString(enc)
     }
 
     let self = {
-        index: (index, reverse=false) => (
-            query.ScanIndexForward = !reverse,
-            query.IndexName = index,
+        index: (index, reverse=false) => ( // eslint-disable-line quote-props
+            query['ScanIndexForward'] = !reverse,
+            query['IndexName'] = index,
             self
         ),
-        filter: (cond) => (
-            cond instanceof BooleanExpression || raise('invalid filter', TypeError),
-            query.FilterExpression = cond.toString(enc),
+        filter: (cond) => ( // eslint-disable-line quote-props
+            cond instanceof Condition || raise('invalid filter', TypeError),
+            query['FilterExpression'] = cond.toString(enc),
             self
         ),
-        project: (...attrs) => (
-            query.ProjectionExpression = attrs.map(enc[0]).join(','),
+        project: (...attrs) => ( // eslint-disable-line quote-props
+            query['ProjectionExpression'] = attrs.map(enc[0]).join(','),
             self
         ),
-        limit: (val) => (query.Limit = val, self),
-        count: () => (
-            delete query.ProjectionExpression,
-            query.Select = 'COUNT',
+        limit: (val) => (query['Limit'] = val, self), // eslint-disable-line quote-props
+        count: () => ( // eslint-disable-line quote-props
+            delete query['ProjectionExpression'],
+            query['Select'] = 'COUNT',
             cleanup(),
             req.then(res => res.Count)
         ),
+        async first() {
+            this.limit(1)
+            let res = (await req).Items
+            if(res.length)
+                return unserialize(res[0])
+        },
         [Symbol.iterator]: function*() {
             cleanup()
             let res
             do {
                 if(res) {
-                    query.ExclusiveStartKey = res.LastEvaluatedKey
+                    query['ExclusiveStartKey'] = res.LastEvaluatedKey
                     req = Query(method, table, query)
                 }
                 let chunk = null
@@ -351,11 +355,11 @@ function search_query(method, table, consistent, cond) {
         },
         [Symbol.asyncIterator]: () => {
             let iter = self[Symbol.iterator]()
-            return {next: () => {
+            return {'next': () => {
                 let {value} = iter.next()
                 return value
                     ? value.then(value => ({value}))
-                    : Promise.resolve({done: true})
+                    : Promise.resolve({'done': true})
             }}
         }
     }
@@ -367,10 +371,11 @@ function search_query(method, table, consistent, cond) {
 }
 
 let update_query = (result={}) => (
-    result.discard = query => query.ReturnValues = 'NONE',
+    result.discard = query => query['ReturnValues'] = 'NONE',
+    result.fresh = query => query['ReturnValues'] - 'ALL_NEW',
     result.when = (query, enc, cond) => (
-        cond instanceof BooleanExpression || raise('invalid filter', TypeError),
-        query.ConditionExpression = cond.toString(enc)
+        cond instanceof Condition || raise('invalid filter', TypeError),
+        query['ConditionExpression'] = cond.toString(enc)
     ),
     [result, res => res.Attributes && unserialize(res.Attributes) || undefined]
 )
@@ -379,31 +384,31 @@ let update_query = (result={}) => (
 let is_obj = val => typeof val == 'object' && val || raise('object expected', TypeError)
 export let Table = (name, consistent=false) => ({
     // getters
-    get: (key, _consistent=consistent) => Query('GetItem', name, {
-        ConsistentRead: _consistent,
-        Key: serialize(is_obj(key))
-    }, {project: (query, enc, ...attrs) =>
-        query.ProjectionExpression = attrs.map(enc[0]).join(',')
+    get: (key, _consistent=consistent) => Query('GetItem', name, { // eslint-disable-line quote-props
+        'ConsistentRead': _consistent,
+        'Key': serialize(is_obj(key))
+    }, {project: (query, enc, ...attrs) => // eslint-disable-line quote-props
+        query['ProjectionExpression'] = attrs.map(enc[0]).join(',')
     }, res => unserialize(res.Item)),
-    query: (condition, _consistent=consistent) =>
+    query: (condition, _consistent=consistent) => // eslint-disable-line quote-props
         search_query('Query', name, _consistent, condition),
-    scan: (_consistent=consistent) =>
+    scan: (_consistent=consistent) => // eslint-disable-line quote-props
         search_query('Scan', name, _consistent),
     // mutators
-    put: item => Query('PutItem', name, {
-        Item: serialize(is_obj(item)),
-        ReturnValues: 'ALL_OLD'
+    put: item => Query('PutItem', name, { // eslint-disable-line quote-props
+        'Item': serialize(is_obj(item)),
+        'ReturnValues': 'ALL_OLD'
     }, ...update_query()),
-    delete: key => Query('DeleteItem', name, {
-        Key: serialize(is_obj(key)),
-        ReturnValues: 'ALL_OLD'
+    delete: key => Query('DeleteItem', name, { // eslint-disable-line quote-props
+        'Key': serialize(is_obj(key)),
+        'ReturnValues': 'ALL_OLD'
     }, ...update_query()),
-    update: key => {
+    update: key => { // eslint-disable-line quote-props
         let expr = new Map()
         return Query('UpdateItem', name, {
-            Key: serialize(is_obj(key)),
-            ReturnValues: 'ALL_OLD',
-            get UpdateExpression() {
+            'Key': serialize(is_obj(key)),
+            'ReturnValues': 'ALL_OLD',
+            get ['UpdateExpression']() {
                 return Array.from(expr.entries())
                             .map(([k, v]) => k + ' ' + v.join(','))
                             .join(' ')

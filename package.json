@@ -2,32 +2,32 @@
   "name": "bliss",
   "version": "1.0.0",
   "description": "Serverless web application framework for Cloudflare Workers",
+  "main": "index.mjs",
   "module": "index.mjs",
-  "modules.root": ".",
   "scripts": {
     "test": "mocha",
-    "lint": "eslint --ext js,mjs .",
-    "cover": "nyc --reporter=html --extension=.mjs mocha"
+    "lint": "eslint --ext=.js,.mjs .",
+    "cover": "ESM_DISABLE_CACHE=1 nyc --reporter=html mocha"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/za-creature/bliss.git"
   },
-  "author": "Radu Dan",
+  "author": "za_creature",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/za-creature/bliss/issues"
   },
   "homepage": "https://github.com/za-creature/bliss",
   "devDependencies": {
-    "babel-eslint": "^10.0.1",
-    "cf-emu": "git+ssh://git@github.com/za-creature/cf-emu.git",
+    "babel-eslint": "^10.1.0",
+    "cf-emu": "file:../cf-emu",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^5.14.1",
-    "esm": "^3.2.7",
-    "mocha": "^6.0.2",
-    "nyc": "^13.3.0",
-    "source-map-support": "^0.5.10"
+    "eslint": "^6.8.0",
+    "esm": "^3.2.25",
+    "mocha": "^7.1.2",
+    "nyc": "^15.0.1",
+    "source-map-support": "^0.5.19"
   }
 }

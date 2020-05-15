@@ -1,6 +1,5 @@
 import {assert} from 'chai'
-//import config from '../aws'
-import {utf8} from '../util'
+import {utf8_encode} from '../util'
 import request, {
     serialize_val, unserialize_val,
     entity_encoder, id_generator,
@@ -10,13 +9,13 @@ import request, {
 
 describe('dynamo', () => {
     let old_fetch, req, res, method, status
-    before(() => (old_fetch = global.fetch, global.fetch = async (...a) => {
+    before(() => (old_fetch = self.fetch, self.fetch = async (...a) => {
         let r = new Request(...a)
         req = JSON.parse(r.body)
         method = r.headers.get('x-amz-target').split('.')[1]
         return {status, json: async () => res}
     }))
-    after(() => global.fetch = old_fetch)
+    after(() => self.fetch = old_fetch)
     beforeEach(() => (status = 200, req = null, res = null))
 
 
@@ -53,7 +52,7 @@ describe('dynamo', () => {
         })
 
         it('handles binary data', () => {
-            assert.deepEqual(serialize_val(utf8('hi')), {B: 'aGk='})
+            assert.deepEqual(serialize_val(utf8_encode('hi')), {B: 'aGk='})
             assert.deepEqual(serialize_val(new Uint8Array([104, 105])), {B: 'aGk='})
         })
 
@@ -65,7 +64,7 @@ describe('dynamo', () => {
         it('supports sets', () => {
             assert.deepEqual(serialize_val(new Set(['a', 'b'])), {SS: ['a', 'b']})
             assert.deepEqual(serialize_val(new Set([1, 2])), {NS: ['1', '2']})
-            assert.deepEqual(serialize_val(new Set([utf8('hi')])), {BS: ['aGk=']})
+            assert.deepEqual(serialize_val(new Set([utf8_encode('hi')])), {BS: ['aGk=']})
             assert.deepEqual(serialize_val(new Set([new Uint8Array([104, 105])])), {BS: ['aGk=']})
             assert.throws(() => serialize_val(new Set([{}])), 'binary set type')
             assert.throws(() => serialize_val(new Set([false])), 'set type')
@@ -127,22 +126,22 @@ describe('dynamo', () => {
         it('encodes keys', () => {
             let res = {}
             let [enc,] = entity_encoder(res)
-            assert(enc('foo') === '#a')
-            assert(res['#a'] === 'foo')
+            assert(enc('foo') == '#a')
+            assert(res['#a'] == 'foo')
         })
 
         it('supports nested keys', () => {
             let res = {}
             let [enc,] = entity_encoder(res)
-            assert(enc('foo.bar') === '#a.#b')
-            assert(res['#a'] === 'foo')
-            assert(res['#b'] === 'bar')
+            assert(enc('foo.bar') == '#a.#b')
+            assert(res['#a'] == 'foo')
+            assert(res['#b'] == 'bar')
         })
 
         it('encodes values', () => {
             let res = {}
             let [,enc] = entity_encoder(undefined, res)
-            assert(enc('bar') === ':a')
+            assert(enc('bar') == ':a')
             assert.deepEqual(res[':a'], {S: 'bar'})
         })
 
@@ -150,11 +149,11 @@ describe('dynamo', () => {
             let keys = {}
             let vals = {}
             let [key, val] = entity_encoder(keys, vals)
-            assert(key('foo') === '#a')
-            assert(key('foo') === '#a')
-            assert(val('foo') === ':b')
-            assert(val('foo') === ':b')
-            assert(keys['#a'] === 'foo')
+            assert(key('foo') == '#a')
+            assert(key('foo') == '#a')
+            assert(val('foo') == ':b')
+            assert(val('foo') == ':b')
+            assert(keys['#a'] == 'foo')
             assert.deepEqual(vals[':b'], {S: 'foo'})
         })
     })
@@ -190,7 +189,7 @@ describe('dynamo', () => {
             assert(attr('a').eq('a')
                    .or(attr('b').eq('b'))
                    .toString(enc) == '(#a=:a)or(#b=:b)')
-            assert(not(attr('k').gt('v')).toString(enc) === 'not(#k>:v)')
+            assert(not(attr('k').gt('v')).toString(enc) == 'not(#k>:v)')
             assert(attr('a').eq('a')
                    .and(attr('b').eq('b'))
                    .or(attr('c').eq('c'))
@@ -252,7 +251,7 @@ describe('dynamo', () => {
                 assert(typeof table.get({id: 1}).then == 'function')
             })
 
-            it.skip('batches queries in the same ioloop iteration', async () => {
+            it.skip('batches queries from the same ioloop iteration', async () => {
                 table.get({id: 1})
                 table.get({id: 2})
                 await new Promise(r => setTimeout(r, 1))
