@@ -1,0 +1,37 @@
+name: tests
+on:
+- push
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+    # dependencies
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 14
+    - uses: actions/cache@v2
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: ${{ runner.os }}-node-
+    - uses: actions/checkout@v2
+    - run: git clone --branch=gh-pages --depth=1 "https://za-creature:${{ github.token }}@github.com/${{ github.repository }}.git" coverage/
+    - run: npm install
+    # run tests test and generate coverage report
+    - run: npm run lint
+    - run: npm run cover
+    # update coverage bage status
+    - run: echo COVERAGE=$(npm run report | grep Statements | awk '{print $3}') >> $GITHUB_ENV
+    - uses: schneegans/dynamic-badges-action@v1.0.0
+      with:
+        auth: ${{ secrets.GIST_TOKEN }}
+        gistID: 1e4664346f422ed78c1cc07a6a5da580
+        filename: coverage.json
+        label: coverage
+        message: ${{ env.COVERAGE }}
+        color: green
+    # publish coverage
+    - run: git config --global user.email "no-reply.actions.cf-emu.za-creature@github.com"
+    - run: git config --global user.name "GitHub Actions"
+    - run: cd coverage && git add . && git commit -m 'Update coverage' && git push

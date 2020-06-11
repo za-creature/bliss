@@ -1,4 +1,7 @@
 require:
-- "source-map-support/register"
-- "esm"
-- "test/helper"
+- 'conftest.js'
+spec:
+- 'bliss/**/*.test.js'
+- 'bliss/**/*.test.mjs'
+ignore:
+- 'node_modules/**/*'

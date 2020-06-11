@@ -1,0 +1,33 @@
+{
+  "name": "bliss-router",
+  "version": "0.9.1",
+  "description": "Serverless web application framework for Cloudflare Workers",
+  "main": "router.mjs",
+  "module": "router.mjs",
+  "bin": "./cli/index.js",
+  "repository": "github:za-creature/bliss",
+  "author": "Radu Dan",
+  "license": "ISC",
+  "bugs": "https://github.com/za-creature/bliss/issues",
+  "homepage": "https://github.com/za-creature/bliss#readme",
+  "dependencies": {
+    "cf-emu": "^1.0.1",
+    "mime-db": "^1.47.0",
+    "nanomatch": "^1.2.13",
+    "node-watch": "^0.7.1",
+    "yargs": "^17.0.1"
+  },
+  "devDependencies": {
+    "c8": "^7.7.2",
+    "chai": "^4.3.4",
+    "eslint": "^7.25.0",
+    "mocha": "^8.4.0",
+    "nyc": "^15.1.0"
+  },
+  "scripts": {
+    "test": "c8 mocha --grep slow --invert",
+    "lint": "eslint .",
+    "cover": "c8 mocha --silent",
+    "report": "c8 report"
+  }
+}
