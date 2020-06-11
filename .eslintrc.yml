@@ -1,26 +1,35 @@
 extends: 'eslint:recommended'
 env:
-    worker: true
-    browser: true
-    es6: true
-parser: babel-eslint
+  es2020: true
 parserOptions:
-    sourceType: module
-    ecmaVersion: 8
+  sourceType: module
 rules:
-    indent:
+  indent:
     - off
-    linebreak-style:
+  linebreak-style:
     - error
     - unix
-    quotes:
+  quotes:
     - error
     - single
-    semi:
+    - avoidEscape: true
+  semi:
     - error
     - never
-    no-cond-assign:
+  no-cond-assign:
     - off
-    quote-props:
+  quote-props:
     - error
     - always
+overrides:
+  - files: ['*.mjs']
+    env:
+      worker: true
+      browser: true
+  - files: ['*.js', '*.test.*']
+    env:
+      node: true
+      mocha: true
+    rules:
+      quote-props:
+        - off

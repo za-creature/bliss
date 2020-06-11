@@ -1,0 +1,16 @@
+{
+    "all": true,
+    "reporter": [
+        "text-summary",
+        "html"
+    ],
+    "include": [
+        "bliss/**/*.js",
+        "bliss/**/*.mjs"
+    ],
+    "exclude": [
+        "**/*.bench.js",
+        "**/*.test.js",
+        "**/*.test.mjs"
+    ]
+}
