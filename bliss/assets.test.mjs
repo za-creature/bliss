@@ -196,14 +196,14 @@ describe('assets', () => {
             assert.equal(str(base128_decode('4\x19-Fc<@w7\\MF ')), 'hello world')
         })
 
-        it('cold start throughput', () => {
-            let input = Buffer.alloc(80000).toString()
+        it('sustained throughput (slow)', () => {
+            let input = Buffer.alloc(800000).toString()
             let start = process.hrtime()
             let output = base128_decode(input)
             let [sec, nsec] = process.hrtime(start)
             let runtime = sec + nsec / 1e6
-            assert.isBelow(runtime, 10)
-            assert.equal(output.length, 70000) // make sure the call isn't optimized away
+            assert.isBelow(runtime, 100)
+            assert.equal(output.length, 700000) // make sure the call isn't optimized away
         })
     })
 })
