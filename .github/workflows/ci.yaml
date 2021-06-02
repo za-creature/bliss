@@ -27,7 +27,7 @@ jobs:
       with:
         auth: ${{ secrets.GIST_TOKEN }}
         gistID: 1e4664346f422ed78c1cc07a6a5da580
-        filename: coverage.json
+        filename: bliss-cov.json
         label: coverage
         message: ${{ env.COVERAGE }}
         color: green
