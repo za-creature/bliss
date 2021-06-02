@@ -32,6 +32,6 @@ jobs:
         message: ${{ env.COVERAGE }}
         color: green
     # publish coverage
-    - run: git config --global user.email "no-reply.actions.cf-emu.za-creature@github.com"
+    - run: git config --global user.email "no-reply.actions.bliss.za-creature@github.com"
     - run: git config --global user.name "GitHub Actions"
     - run: cd coverage && git add . && git commit -m 'Update coverage' && git push
