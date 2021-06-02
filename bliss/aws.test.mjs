@@ -40,7 +40,7 @@ describe('aws', () => {
                 return 'mock'
             }
             global.Date = function() {
-                return new old_date(2019, 2, 10, 19, 46, 12)
+                return new old_date(1552239972000)
             }
             assert.equal(await aws_rest('s3', 'GET'), 'mock')
             assert.equal(new URL(url).href, 'https://s3.us-east-1.amazonaws.com/')
