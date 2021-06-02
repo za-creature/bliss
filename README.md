@@ -4,4 +4,4 @@ https://za-creature.github.io/bliss
 
 In addition, many commits are pushed by bots that are run from a GitHub-managed
 git hook, currently known ones are:
-- "GitHub Actions <no-reply.actions.cf-emu.za-creature@github.com>"
+- "GitHub Actions <no-reply.actions.bliss.za-creature@github.com>"
