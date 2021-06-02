@@ -3,10 +3,6 @@
 [![coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/za-creature/1e4664346f422ed78c1cc07a6a5da580/raw/bliss-cov.json)](https://za-creature.github.io/bliss)
 
 
-
-[![tests](https://github.com/za-creature/bliss/workflows/tests/badge.svg?branch=master&event=push)](https://github.com/za-creature/bliss/actions?query=workflow%3Atests+branch%3Amaster)
-[![coverage](https://github.com/za-creature/bliss/workflows/coverage/badge.svg?branch=master&event=push)](https://za-creature.github.io/bliss)
-
 # bliss
 *Experimental* work-in-progress some-batteries-included `on('fetch')` HTTP
 server framework designed and optimized for
@@ -53,12 +49,12 @@ locally (by default on port 8080):
 
 ```bash
 cd /path/to/your/folder/containing/bliss.config.js
-npx bliss
+npx bliss-router
 ```
 
 For more options, see the [CLI spec](bliss/cli/cli.js) or run
 ```bash
-npx bliss --help
+npx bliss-router --help
 ```
 
 ## Module docs
