@@ -65,9 +65,9 @@ describe('util', () => {
         })
 
         it('accepts string names', async () => {
-            assert.deepEqual(await hmac('key', 'data', 'sha384'),
+            assert.deepEqual(await hmac('key', 'data', 'sha-384'),
                              await hmac('key', 'data', sha384))
-            assert.deepEqual(await hmac('key', 'data', 'sha512'),
+            assert.deepEqual(await hmac('key', 'data', 'sha-512'),
                              await hmac('key', 'data', sha512))
         })
     })
