@@ -11,23 +11,23 @@
   "bugs": "https://github.com/za-creature/bliss/issues",
   "homepage": "https://github.com/za-creature/bliss#readme",
   "dependencies": {
-    "cf-emu": "^1.0.1",
+    "cf-emu": "^1.0.3",
     "mime-db": "^1.47.0",
     "nanomatch": "^1.2.13",
     "node-watch": "^0.7.1",
     "yargs": "^17.0.1"
   },
   "devDependencies": {
-    "c8": "^7.7.2",
-    "chai": "^4.3.4",
-    "eslint": "^7.25.0",
-    "mocha": "^8.4.0",
-    "nyc": "^15.1.0"
+    "c8": "^10.1.2",
+    "chai": "^5.1.1",
+    "eslint": "^9.7.0",
+    "mocha": "^10.6.0",
+    "nyc": "^17.0.0"
   },
   "scripts": {
-    "test": "c8 mocha --grep slow --invert",
+    "test": "c8 mocha --no-parallel --grep slow --invert",
     "lint": "eslint .",
-    "cover": "c8 mocha --silent",
+    "cover": "c8 mocha --no-parallel --silent",
     "report": "c8 report"
   }
 }
