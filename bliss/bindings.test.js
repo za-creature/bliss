@@ -1,4 +1,4 @@
-let {assert} = require('chai')
+import('chai').then(({assert}) => {
 let bindings = require('./bindings')
 
 
@@ -30,4 +30,5 @@ describe('bindings', () => {
     spec('wasm', 'wasm_module')
     spec('file', 'bliss_asset')
     spec('dir', 'bliss_asset')
+})
 })

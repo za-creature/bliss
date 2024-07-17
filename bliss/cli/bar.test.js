@@ -1,4 +1,4 @@
-let {assert} = require('chai')
+import('chai').then(({assert}) => {
 let {valid_utf8, pack, base128_encode} = require('./bar')
 
 
@@ -167,4 +167,5 @@ describe('bar', () => {
             [false, [0xF5, 0xFF], ANY, ANY, ANY]
         )
     })
+})
 })
