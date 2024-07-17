@@ -11,7 +11,7 @@ describe('dynamo', () => {
     let old_fetch, req, res, method, status
     before(() => (old_fetch = global.fetch, global.fetch = async (...a) => {
         let r = new Request(...a)
-        req = json_decode(r.body)
+        req = json_decode(a[1].body)
         method = r.headers.get('x-amz-target').split('.')[1]
         return {status, json: async () => res}
     }))
@@ -266,14 +266,14 @@ describe('dynamo', () => {
             it.skip('batches queries from the same ioloop iteration', async () => {
                 table.get({id: 1})
                 table.get({id: 2})
-                await sleep(1)
+                await sleep(100)
                 assert(is_object(req.RequestItems))
             })
 
             it('only triggers after await', async () => {
                 table.get({id: 1})
                 assert(req == null)
-                await sleep(1)
+                await sleep(100)
                 assert.equal(method, 'GetItem')
                 assert.equal(req.TableName, 'test')
                 assert.equal(req.Key.id.N, '1')
@@ -308,23 +308,23 @@ describe('dynamo', () => {
             it('only triggers after await', async () => {
                 table.scan().filter(attr('id').eq(1))
                 assert.isNull(req)
-                await sleep(1)
+                await sleep(100)
                 assert.equal(method, 'Scan')
                 assert.equal(req.FilterExpression, '#a=:b')
             })
 
             it('respects consistency', async () => {
                 table.scan()
-                await sleep(1)
+                await sleep(100)
                 assert(!req.ConsistentRead)
                 table.scan(true)
-                await sleep(1)
+                await sleep(100)
                 assert(req.ConsistentRead)
                 Table('test', true).scan(false)
-                await sleep(1)
+                await sleep(100)
                 assert(!req.ConsistentRead)
                 Table('test', true).scan()
-                await sleep(1)
+                await sleep(100)
                 assert(req.ConsistentRead)
             })
 
