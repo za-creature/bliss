@@ -116,7 +116,7 @@ export default function asset(path, data, headers=null/*, variants=null,*/) {
     })
 }
 asset.headers = new Headers({
-    'accept-ranges': 'bytes',
+    //'accept-ranges': 'bytes',
     'cache-control': 'public,max-age=7200',
     'content-type': 'application/octet-stream',
     'content-disposition': 'inline'
