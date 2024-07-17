@@ -1,4 +1,4 @@
-let {assert} = require('chai')
+import('chai').then(({assert}) => {
 let {readFile} = require('fs')
 
 
@@ -25,4 +25,5 @@ describe('package', () => {
         let {bugs} = require('./package.json')
         assert.isString(bugs)
     })
+})
 })

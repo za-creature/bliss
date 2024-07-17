@@ -1,4 +1,4 @@
-let {assert} = require('chai')
+import('chai').then(({assert}) => {
 let {spawn} = require('child_process')
 let path = require('path')
 let fetch = require('node-fetch')
@@ -84,4 +84,5 @@ describe('cli', () => {
             config: './fixtures/bliss.config.js'
         })
     })
+})
 })

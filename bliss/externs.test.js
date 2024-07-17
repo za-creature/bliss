@@ -1,4 +1,4 @@
-let {assert} = require('chai')
+import('chai').then(({assert}) => {
 let externs = require('./externs')
 
 
@@ -10,4 +10,5 @@ describe('externs', () => {
     include('addEventListener')
     include('removeEventListener')
     include('caches')
+})
 })
