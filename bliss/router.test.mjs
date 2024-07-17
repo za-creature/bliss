@@ -47,7 +47,7 @@ describe('bliss', () => {
 
                 let response = await call('/foo')
                 assert(!response.ok)
-                assert.equal(response.body, 'internal error')
+                assert.equal(await response.text(), 'internal error')
                 assert.include(error.toString(), 'Error: oops')
             } finally {
                 console.error = old_err
@@ -206,53 +206,53 @@ describe('bliss', () => {
 
 
     describe('response', () => {
-        it('returns a Response', () => {
+        it('returns a Response', async () => {
             let res = response('hello world')
             assert(res instanceof Response)
-            assert.equal(res.body, 'hello world')
+            assert.equal(await res.text(), 'hello world')
         })
 
         it('forwards status', () => {
-            assert.equal(response('', 204).status, 204)
+            assert.equal(response(null, 204).status, 204)
         })
 
-        it('forwards headers', () => {
+        it('forwards headers', async () => {
             let res = response('hello world', {test: 'hi'})
             assert(res.ok)
             assert.equal(res.headers.get('test'), 'hi')
-            assert.equal(res.body, 'hello world')
+            assert.equal(await res.text(), 'hello world')
         })
 
-        it('forwards status and headers', () => {
-            let res = response('hello world', 123, {test: 'hi'})
-            assert.equal(res.status, 123)
+        it('forwards status and headers', async () => {
+            let res = response('hello world', 234, {test: 'hi'})
+            assert.equal(res.status, 234)
             assert.equal(res.headers.get('test'), 'hi')
-            assert.equal(res.body, 'hello world')
+            assert.equal(await res.text(), 'hello world')
         })
     })
 
 
     describe('redirect', () => {
         it('returns a redirect Response', () => {
-            let res = redirect('/test')
+            let res = redirect('https://google.com/test')
             assert.instanceOf(res, Response)
             assert.equal(res.status, 303)
-            assert.equal(res.headers.get('location'), '/test')
+            assert.equal(res.headers.get('location'), 'https://google.com/test')
         })
 
         it('sets custom response status', () => {
-            assert.equal(redirect('/test', 321).status, 321)
+            assert.equal(redirect('https://google.com/test', 307).status, 307)
         })
     })
 
 
     describe('json', () => {
-        it('serializes a json object', () => {
+        it('serializes a json object', async () => {
             let res = json({foo: 'bar'})
             assert.instanceOf(res, Response)
             assert.equal(res.status, 200)
             assert.include(res.headers.get('content-type'), '/json')
-            assert.equal(json_decode(res.body).foo, 'bar')
+            assert.equal((await res.json()).foo, 'bar')
         })
 
         it('sets custom response status', () => {
@@ -262,11 +262,11 @@ describe('bliss', () => {
 
 
     describe('render', () => {
-        it('returns a html response', () => {
+        it('returns a html response', async () => {
             let res = render(() => 'hello world')
             assert.equal(res.status, 200)
             assert.include(res.headers.get('content-type'), '/html')
-            assert.equal(res.body, 'hello world')
+            assert.equal(await res.text(), 'hello world')
         })
 
         it('invokes the template with default context', () => {
@@ -294,13 +294,13 @@ describe('bliss', () => {
 
         it('head', async () => {
             head('/', fn)
-            assert.isNull((await call('/', 'head')).body)
+            assert.equal('', await ((await call('/', 'head')).text()))
             assert(called)
         })
 
         it('get+head', async () => {
             get('/', fn)
-            assert.isNull((await call('/', 'head')).body)
+            assert.equal('', await ((await call('/', 'head')).text()))
             assert(called)
         })
 
